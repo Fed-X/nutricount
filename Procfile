@@ -1,1 +1,1 @@
-web: ./dist/build/nutricount-api -p $PORT
+web: ./dist/build/nutricount-api/nutricount-api -p $PORT
