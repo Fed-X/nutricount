@@ -26,11 +26,44 @@ import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
 
+authHandler :: Handler App App ()
+authHandler = modifyResponse $ setResponseCode 401
+
+
+registerHandler :: Handler App App ()
+registerHandler = do
+    -- check if exists
+    email' <- email
+    pass'  <- pass
+    return $ registerUser <$> email' <*> pass'
+    --loginUser email pass "9999"
+    writeText ""
+
+  where
+    email = withRequest (\r -> return (head <$> (rqParam "email" r)))
+    pass  = withRequest (\r -> return (head <$> (rqParam "pass" r)))
+
+
+loginHandler :: Handler App App ()
+loginHandler = writeText ""
+  -- email
+  -- password
+  -- check creds against db
+  -- forward to login || not authorized
+
+
+logoutHandler :: Handler App (AuthManager App) ()
+logoutHandler = logout >> putResponse emptyResponse
+
 
 ------------------------------------------------------------------------------
 -- | The application's routes.
 routes :: [(ByteString, Handler App App ())]
-routes = [("", serveDirectory "static")
+routes = [("", serveDirectory "static"),
+          ("/register", registerHandler),
+          ("/login", loginHandler),
+          ("/logout", with auth logoutHandler),
+          ("/auth", authHandler)
          ]
 
 
