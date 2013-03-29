@@ -34,6 +34,7 @@ Executable nutricount-api
     text                      >= 0.11    && < 0.12,
     time                      >= 1.1     && < 1.5,
     xmlhtml                   >= 0.1,
+    transformers,
     snaplet-postgresql-simple
 
   if flag(old-base)

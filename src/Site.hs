@@ -10,6 +10,8 @@ module Site
 
 ------------------------------------------------------------------------------
 import           Control.Applicative
+import           Control.Monad.Trans.Maybe
+import           Control.Monad.Trans.Class
 import           Data.ByteString (ByteString)
 import           Data.Maybe
 import qualified Data.Text as T
@@ -29,19 +31,17 @@ import           Application
 authHandler :: Handler App App ()
 authHandler = modifyResponse $ setResponseCode 401
 
-
-registerHandler :: Handler App App ()
 registerHandler = do
-    -- check if exists
-    email' <- email
-    pass'  <- pass
-    return $ registerUser <$> email' <*> pass'
-    --loginUser email pass "9999"
-    writeText ""
+    maybeCreds <- runMaybeT $ do
+      Just email <- lift $ getParam "email"
+      Just pass <- lift $ getParam "pass"
+      return (email, pass)
+    maybe (writeText "Must specify email and pass") register maybeCreds
 
   where
-    email = withRequest (\r -> return (head <$> (rqParam "email" r)))
-    pass  = withRequest (\r -> return (head <$> (rqParam "pass" r)))
+    register creds = do
+      with auth $ registerUser (fst creds) (snd creds)
+      writeText "user registered"
 
 
 loginHandler :: Handler App App ()
