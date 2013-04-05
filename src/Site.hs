@@ -9,6 +9,7 @@ module Site
   ) where
 
 ------------------------------------------------------------------------------
+import           Debug.Trace
 import           Control.Applicative
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Class
@@ -28,31 +29,40 @@ import qualified Heist.Interpreted as I
 ------------------------------------------------------------------------------
 import           Application
 
-authHandler :: Handler App App ()
-authHandler = modifyResponse $ setResponseCode 401
+maybeCreds = runMaybeT $ do
+  Just email <- lift $ getParam "email"
+  Just pass <- lift $ getParam "password"
+  return (email, pass)
+
+authHandler = do
+    loggedIn <- with auth $ isLoggedIn
+    if loggedIn then writeText "" else modifyResponse $ setResponseCode 401
 
 registerHandler = do
-    maybeCreds <- runMaybeT $ do
-      Just email <- lift $ getParam "email"
-      Just pass <- lift $ getParam "pass"
-      return (email, pass)
-    maybe (writeText "Must specify email and pass") register maybeCreds
+    creds <- maybeCreds
+    maybe failure register creds
 
   where
+    failure = do
+      modifyResponse $ setResponseCode 401
+      writeText "Must specify email and pass"
+
     register creds = do
-      with auth $ registerUser (fst creds) (snd creds)
-      writeText "user registered"
+      rsp <- with auth $ registerUser "email" "password"
+      traceShow rsp (writeText "user registered")
 
 
-loginHandler :: Handler App App ()
-loginHandler = writeText ""
-  -- email
-  -- password
-  -- check creds against db
-  -- forward to login || not authorized
+loginHandler = do
+    creds <- maybeCreds
+    maybe failure login creds
+
+  where
+    failure = modifyResponse $ setResponseCode 401
+    login creds = do
+      rsp <- with auth $ loginByUsername (fst creds) (ClearText $ snd creds) True
+      traceShow rsp (writeText "")
 
 
-logoutHandler :: Handler App (AuthManager App) ()
 logoutHandler = logout >> putResponse emptyResponse
 
 

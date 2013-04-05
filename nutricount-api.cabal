@@ -1,4 +1,4 @@
-Name:                nutricount-api
+Name:                nutricount
 Version:             0.1
 Synopsis:            Project Synopsis Here
 Description:         Project Description Here
@@ -18,7 +18,7 @@ Flag old-base
   default: False
   manual: False
 
-Executable nutricount-api
+Executable nutricount
   hs-source-dirs: src
   main-is: Main.hs
 

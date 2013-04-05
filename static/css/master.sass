@@ -1,0 +1,73 @@
+body
+  background: url(../images/scribble_light.png)
+
+.modal
+  display: none
+
+#content
+  text-align: center
+  #calories
+    margin-left: -63px
+  #food-selection
+    width: 768px
+    position: relative
+    margin: auto
+    #saved-plans
+      position: absolute
+      right: -75px
+      text-align: left
+      .plan
+        position: relative
+        .typicn
+          position: absolute
+          &.previous
+            top: 2px
+            left: -30px
+          &.minus
+            top: 0px
+            left: -20px
+    #food
+      margin-top: 15px
+      .food
+        display: display-block
+  .typicn
+    display: inline-block
+    cursor: pointer
+    &.plus.one
+      margin: 6px -40px 0 6px
+    &.plus.two
+      position: absolute
+      margin: 1px 0 0 20px
+    &.minus
+      position: absolute
+      margin: 2px
+  table
+    width: 80%
+    margin: 40px auto
+    td
+      text-align: center
+      .separator
+        font-size: 0.9em
+      &.status
+        .content
+          position: relative
+          background: url(../images/pool_table.png)
+          z-index: -1
+          padding: 9px
+          &:after
+            content: ''
+            position: absolute
+            top: 0
+            bottom: 0
+            right: 0
+            left: 0
+            z-index: -1
+          &.done
+            &:after
+              background-color: hsla(154, 62%, 68%, 0.5)
+          &.close
+            &:after
+              background-color: hsla(50, 100%, 63%, 0.6)
+          &.insufficient
+            &:after
+              background-color: hsla(0, 100%, 60%, 0.6)
