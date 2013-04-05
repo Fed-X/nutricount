@@ -15,9 +15,9 @@ HomeController = ($scope, $http) ->
 
     # Fetching json database items
     # ----------------------------
-    $http.get('data/food.json').success (food) -> $scope.food = food
+    $http.get('/nutricount/data/food.json').success (food) -> $scope.food = food
 
-    $http.get('data/values.json').success (nutrients) ->
+    $http.get('/nutricount/data/values.json').success (nutrients) ->
       $scope.nutrients = nutrients
       nutrients = _.keys nutrients
       $scope.nutrients1 = nutrients[0..7]

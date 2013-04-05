@@ -13,10 +13,10 @@
     $scope.$watch('calories', function() {
       return localStorage.setItem('calories', $scope.calories);
     });
-    $http.get('data/food.json').success(function(food) {
+    $http.get('/nutricount/data/food.json').success(function(food) {
       return $scope.food = food;
     });
-    $http.get('data/values.json').success(function(nutrients) {
+    $http.get('/nutricount/data/values.json').success(function(nutrients) {
       $scope.nutrients = nutrients;
       nutrients = _.keys(nutrients);
       $scope.nutrients1 = nutrients.slice(0, 8);
