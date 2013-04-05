@@ -195,10 +195,10 @@ angular.module('nutricount', ['ui'])
     ]
     $httpProvider.responseInterceptors.push interceptor
 
-    $routeProvider.when('/',
+    $routeProvider.when('/nutricount',
       templateUrl: '/partials/home.html'
       controller: HomeController
-    ).otherwise redirectTo: '/'
+    ).otherwise redirectTo: '/nutricount'
 
     $locationProvider.html5Mode true
   ])

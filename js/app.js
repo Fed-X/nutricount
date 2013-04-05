@@ -289,11 +289,11 @@
         }
       ];
       $httpProvider.responseInterceptors.push(interceptor);
-      $routeProvider.when('/', {
+      $routeProvider.when('/nutricount', {
         templateUrl: '/partials/home.html',
         controller: HomeController
       }).otherwise({
-        redirectTo: '/'
+        redirectTo: '/nutricount'
       });
       return $locationProvider.html5Mode(true);
     }
