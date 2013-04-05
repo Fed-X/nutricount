@@ -1,6 +1,6 @@
 HomeController = ($scope, $http) ->
 
-    $http.get('http://localhost:8000/auth')
+    #$http.get('http://localhost:8000/auth')
 
     # Fetching localStorage items
     # ---------------------------

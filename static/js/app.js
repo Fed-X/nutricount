@@ -5,7 +5,6 @@
   HomeController = function($scope, $http) {
     var save_food, save_plans, sfood, splans;
 
-    $http.get('http://localhost:8000/auth');
     sfood = localStorage.getItem('selected_food');
     $scope.selected_food = (sfood && JSON.parse(sfood)) || [];
     splans = localStorage.getItem('saved_plans');
