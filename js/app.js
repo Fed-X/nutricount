@@ -290,7 +290,7 @@
       ];
       $httpProvider.responseInterceptors.push(interceptor);
       $routeProvider.when('/nutricount', {
-        templateUrl: '/partials/home.html',
+        templateUrl: '/nutricount/partials/home.html',
         controller: HomeController
       }).otherwise({
         redirectTo: '/nutricount'
