@@ -2,95 +2,14 @@
 (function() {
   var HomeController;
 
-  HomeController = function($scope, $http) {
-    var save_food, save_plans, sfood, splans;
-
-    $http.get('http://localhost:8000/auth');
-    sfood = localStorage.getItem('selected_food');
-    $scope.selected_food = (sfood && JSON.parse(sfood)) || [];
-    splans = localStorage.getItem('saved_plans');
-    $scope.saved_plans = (splans && JSON.parse(splans)) || {};
-    $scope.calories = localStorage.getItem('calories') || '2000';
-    $scope.$watch('calories', function() {
-      return localStorage.setItem('calories', $scope.calories);
-    });
-    $http.get('data/food.json').success(function(food) {
-      return $scope.food = food;
-    });
-    $http.get('data/values.json').success(function(nutrients) {
-      $scope.nutrients = nutrients;
-      nutrients = _.keys(nutrients);
-      $scope.nutrients1 = nutrients.slice(0, 8);
-      $scope.nutrients2 = nutrients.slice(7, 16);
-      return $scope.nutrients3 = nutrients.slice(16, 26);
-    });
-    save_food = function() {
-      return localStorage.setItem('selected_food', JSON.stringify($scope.selected_food));
-    };
-    save_plans = function() {
-      return localStorage.setItem('saved_plans', JSON.stringify($scope.saved_plans));
-    };
-    $scope.itemsExist = function() {
-      return $scope.selected_food[0];
-    };
-    $scope.clear = function() {
-      return $scope.selected_food = [];
-    };
-    $scope.save = function() {
-      var name;
-
-      name = prompt('What would you like to save this as?');
-      if (name) {
-        $scope.saved_plans[name] = _.map($scope.selected_food, function(food) {
-          return _.clone(food);
-        });
-        return save_plans();
+  HomeController = function($rootScope, $scope, $http, authService) {
+    window.s = $scope;
+    window.rs = $rootScope;
+    $http.get('http://localhost:8000/auth').success(function(user) {
+      if (user !== 'null') {
+        return authService.loginConfirmed(user);
       }
-    };
-    $scope.loadPlan = function(plan) {
-      return $scope.selected_food = _.map(plan, function(food) {
-        return _.clone(food);
-      });
-    };
-    $scope.removePlan = function(plan) {
-      delete $scope.saved_plans[plan];
-      return save_plans();
-    };
-    $scope.foodSelect = function() {};
-    $scope.addFood = function() {
-      var food;
-
-      food = _.find($scope.food, function(food) {
-        return food.name === angular.element('select').val();
-      });
-      if (food) {
-        sfood = _.find($scope.selected_food, function(sfood) {
-          return sfood.name === food.name;
-        });
-        if (sfood) {
-          $scope.addServing(sfood);
-        } else {
-          food.servings = 1;
-          $scope.selected_food.push(food);
-          save_food();
-        }
-        return angular.element('select').select2('val', '');
-      }
-    };
-    $scope.removeFood = function(food) {
-      if (food.servings > 1) {
-        food.servings -= 1;
-      } else {
-        $scope.selected_food = _.reject($scope.selected_food, function(selected_food) {
-          return selected_food === food;
-        });
-      }
-      return save_food();
-    };
-    $scope.addServing = function(food) {
-      food.servings += 1;
-      return save_food();
-    };
+    });
     $scope.calculate = function(nutrient) {
       var num;
 
@@ -177,88 +96,14 @@
         };
         $http = void 0;
         return {
-          loginConfirmed: function() {
-            $rootScope.$broadcast('auth:loginConfirmed');
+          loginConfirmed: function(user) {
+            $rootScope.$broadcast('auth:loginConfirmed', user);
             return retryAll();
           }
         };
       }
     ];
     return '';
-  }).directive('init', function($http, $timeout, authService) {
-    return function(scope) {
-      window.scope = scope;
-      scope.form = {};
-      scope.$on('auth:loginRequired', function() {
-        console.log('yo');
-        return angular.element('#login').bPopup({
-          modalClose: false
-        }, function() {
-          return angular.element('#login input[type=email]').focus();
-        });
-      });
-      scope.login = function() {
-        angular.element('#login').bPopup().close();
-        return $http({
-          method: 'POST',
-          url: '/login',
-          data: $.param({
-            email: this.form.email,
-            password: this.form.password
-          }),
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        }).success(function(rsp, status, headers) {
-          if (rsp.success) {
-            scope.form = {};
-            return authService.loginConfirmed();
-          } else {
-            return scope.$broadcast('auth:loginRequired');
-          }
-        });
-      };
-      scope.signup = function() {
-        angular.element('#signup').bPopup().close();
-        if (this.form.password === this.form.password_confirmation) {
-          return $http({
-            method: 'POST',
-            url: '/register',
-            data: $.param({
-              name: this.form.name,
-              email: this.form.email,
-              password: this.form.password
-            }),
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          }).success(function(rsp, status, headers) {
-            scope.form = {};
-            if (rsp.success) {
-              return authService.loginConfirmed();
-            }
-          });
-        }
-      };
-      scope.signup_link = function() {
-        angular.element('#login').bPopup().close();
-        return $timeout(function() {
-          angular.element('#signup').bPopup({
-            modalClose: false
-          });
-          return angular.element('#signup input[type=text]:first').focus();
-        }, 400);
-      };
-      return scope.signin_link = function() {
-        angular.element('#signup').bPopup().close();
-        return $timeout(function() {
-          angular.element('#login').bPopup({
-            modalClose: false
-          });
-          return angular.element('#login input[type=email]').focus();
-        }, 400);
-      };
-    };
   }).config([
     '$routeProvider', '$locationProvider', '$httpProvider', 'authServiceProvider', function($routeProvider, $locationProvider, $httpProvider, authServiceProvider) {
       var interceptor;
@@ -273,9 +118,7 @@
           error = function(rsp) {
             var deferred;
 
-            console.log(rsp.headers());
             if (rsp.status === 401) {
-              console.log('err');
               deferred = $q.defer();
               authServiceProvider.pushToBuffer(rsp.config, deferred);
               $rootScope.$broadcast('auth:loginRequired');
@@ -298,6 +141,89 @@
       });
       return $locationProvider.html5Mode(true);
     }
-  ]);
+  ]).run(function($http, $timeout, $rootScope, authService) {
+    $rootScope.form = {};
+    $rootScope.$on('auth:loginConfirmed', function(event, user) {
+      return $rootScope.user = user;
+    });
+    $rootScope.$on('auth:loginRequired', function() {
+      return $timeout((function() {
+        return angular.element('#login').bPopup({
+          modalClose: false
+        }, function() {
+          return angular.element('#login input[type=email]').focus();
+        });
+      }), 500);
+    });
+    $rootScope.login_modal = function() {
+      return angular.element('.modal#login').bPopup();
+    };
+    $rootScope.login = function() {
+      return $http({
+        method: 'POST',
+        url: '/login',
+        data: $.param({
+          email: this.form.email,
+          password: this.form.password
+        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }).success(function(rsp, status, headers) {
+        if (rsp.user) {
+          $rootScope.form = {};
+          angular.element('#login').bPopup().close();
+          return authService.loginConfirmed(rsp.user);
+        } else {
+          return angular.element('.modal#login .message').text(rsp.message);
+        }
+      });
+    };
+    $rootScope.signup_modal = function() {
+      return angular.element('.modal#signup').bPopup();
+    };
+    $rootScope.signup = function() {
+      if (this.form.password === this.form.password_confirmation) {
+        return $http({
+          method: 'POST',
+          url: '/register',
+          data: $.param({
+            name: this.form.name,
+            email: this.form.email,
+            password: this.form.password
+          }),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }).success(function(rsp, status, headers) {
+          if (rsp.user) {
+            $rootScope.form = {};
+            angular.element('#signup').bPopup().close();
+            return authService.loginConfirmed(rsp.user);
+          } else {
+            return angular.element('.modal#signup .message').text(rsp.message);
+          }
+        });
+      }
+    };
+    $rootScope.signup_link = function() {
+      angular.element('#login').bPopup().close();
+      return $timeout(function() {
+        angular.element('#signup').bPopup({
+          modalClose: false
+        });
+        return angular.element('#signup input[type=text]:first').focus();
+      }, 400);
+    };
+    return $rootScope.signin_link = function() {
+      angular.element('#signup').bPopup().close();
+      return $timeout(function() {
+        angular.element('#login').bPopup({
+          modalClose: false
+        });
+        return angular.element('#login input[type=email]').focus();
+      }, 400);
+    };
+  });
 
 }).call(this);

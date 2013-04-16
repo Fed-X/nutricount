@@ -14,35 +14,52 @@
     <script src='js/app.js'></script>
   </head>
   <body>
+    <header>
+      <div class='title'>NutriCount</div>
+      <div id='auth'>
+        <div ng:show='user'>
+          <div class='content'>
+            <span>Welcome back, </span>
+            <span class='username'>{{user.name}}</span>
+          </div>
+        </div>
+        <div ng:hide='user'>
+          <div class='content'>
+            <span ng:click='login_modal()'>Login</span>
+            <span class='separator'>|</span>
+            <span ng:click='signup_modal()'>Signup</span>
+          </div>
+        </div>
+      </div>
+    </header>
     <div ng:view></div>
-<div class='modal' id='signup'>
-      <form ng-submit='signup()' class='signup'>
+    <div class='modal' id='signup'>
+      <form ng:submit='signup()' class='signup'>
         <div class='title'>Sign up</div>
-        <input type='text' ng-model='form.name' placeholder='Name' />
-        <input type='email' ng-model='form.email' placeholder='Email' />
-        <input type='password' ng-model='form.password' placeholder='Password' />
-        <input type='password' ng-model='form.password_confirmation' placeholder='Password Confirmation' />
+        <input type='text' ng:model='form.name' placeholder='Name' />
+        <input type='email' ng:model='form.email' placeholder='Email' />
+        <input type='password' ng:model='form.password' placeholder='Password' />
+        <input type='password' ng:model='form.password_confirmation' placeholder='Password Confirmation' />
         <div class='submit'>
           <button type='submit'>Submit</button>
         </div>
         <div class='footer'>
-          <div ng-click='signin_link()' class='signin-link'>Already have an account with us? Sign in!</div>
+          <div ng:click='signin_link()' class='signin-link'>Already have an account with us? Sign in!</div>
         </div>
       </form>
     </div>
     <div class='modal' id='login'>
-      <form ng-submit='login()' class='signin'>
+      <form ng:submit='login()' class='signin'>
         <div class='title'>Sign in</div>
-        <input type='email' ng-model='form.email' placeholder='Email' />
-        <input type='password' ng-model='form.password' placeholder='Password' />
+        <input type='email' ng:model='form.email' placeholder='Email' />
+        <input type='password' ng:model='form.password' placeholder='Password' />
         <div class='submit'>
           <button type='submit'>Submit</button>
         </div>
         <div class='footer'>
-          <div ng-click='signup_link()' class='signup-link'>Don't have an account with us? Sign up today!</div>
+          <div ng:click='signup_link()' class='signup-link'>Don't have an account with us? Sign up today!</div>
         </div>
       </form>
     </div>
-
   </body>
 </html>

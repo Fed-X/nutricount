@@ -2,3 +2,4 @@ log/
 dist/
 devel.cfg
 site_key.txt
+.sass-cache/

@@ -1,73 +1,7 @@
-HomeController = ($scope, $http) ->
+HomeController = ($rootScope, $scope, $http, authService) ->
 
     $http.get('http://localhost:8000/auth')
-
-    # Fetching localStorage items
-    # ---------------------------
-    sfood = localStorage.getItem('selected_food')
-    $scope.selected_food = (sfood && JSON.parse sfood) || []
-
-    splans = localStorage.getItem('saved_plans')
-    $scope.saved_plans = (splans && JSON.parse splans) || {}
-
-    $scope.calories = localStorage.getItem('calories') || '2000'
-    $scope.$watch 'calories', -> localStorage.setItem 'calories', $scope.calories
-
-    # Fetching json database items
-    # ----------------------------
-    $http.get('data/food.json').success (food) -> $scope.food = food
-
-    $http.get('data/values.json').success (nutrients) ->
-      $scope.nutrients = nutrients
-      nutrients = _.keys nutrients
-      $scope.nutrients1 = nutrients[0..7]
-      $scope.nutrients2 = nutrients[7..15]
-      $scope.nutrients3 = nutrients[16..25]
-
-    # Functions
-    # ----------------------------
-
-    save_food  = -> localStorage.setItem('selected_food', JSON.stringify $scope.selected_food)
-    save_plans = -> localStorage.setItem('saved_plans',   JSON.stringify $scope.saved_plans)
-
-    $scope.itemsExist = -> $scope.selected_food[0]
-
-    $scope.clear = -> $scope.selected_food = []
-
-    $scope.save = ->
-      name = prompt 'What would you like to save this as?'
-      if name
-        $scope.saved_plans[name] = _.map $scope.selected_food, (food) -> _.clone food
-        save_plans()
-
-    $scope.loadPlan = (plan) ->
-      $scope.selected_food = _.map plan, (food) -> _.clone food
-
-    $scope.removePlan = (plan) -> delete $scope.saved_plans[plan]; save_plans()
-
-    $scope.foodSelect = ->
-      
-
-    $scope.addFood = ->
-      food = _.find $scope.food, (food) -> food.name is angular.element('select').val()
-      if food
-        sfood = _.find($scope.selected_food, (sfood) -> sfood.name == food.name)
-        if sfood
-          $scope.addServing sfood
-        else
-          food.servings = 1
-          $scope.selected_food.push food
-          save_food()
-        angular.element('select').select2('val', '')
-
-    $scope.removeFood = (food) ->
-      if food.servings > 1
-        food.servings -= 1
-      else
-        $scope.selected_food = _.reject $scope.selected_food, (selected_food) -> selected_food == food
-      save_food()
-
-    $scope.addServing = (food) -> food.servings += 1; save_food()
+      .success (user) -> authService.loginConfirmed user unless user is 'null'
 
     $scope.calculate = (nutrient) ->
       num = 0
@@ -125,65 +59,17 @@ angular.module('nutricount', ['ui'])
           ++i
         buffer = []
       $http = undefined
-      loginConfirmed: ->
-        $rootScope.$broadcast 'auth:loginConfirmed'
+      loginConfirmed: (user) ->
+        $rootScope.$broadcast 'auth:loginConfirmed', user
         retryAll()
     ]
     '' # to combat coffeescript's implicit return
-  )
-  .directive('init', ($http, $timeout, authService) -> (scope) ->
-    window.scope = scope
-    scope.form = {}
-
-    # scope.$on 'auth:loginConfirmed', ->
-    scope.$on 'auth:loginRequired', ->
-      console.log 'yo'
-      angular.element('#login').bPopup { modalClose: false }, -> angular.element('#login input[type=email]').focus()
-
-    scope.login = ->
-      angular.element('#login').bPopup().close()
-      $http({
-        method: 'POST'
-        url: '/login'
-        data: $.param { email: @form.email, password: @form.password }
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      }).success (rsp, status, headers) ->
-        if rsp.success
-          scope.form = {}
-          authService.loginConfirmed()
-        else
-          scope.$broadcast 'auth:loginRequired'
-
-    scope.signup = ->
-      angular.element('#signup').bPopup().close()
-      if @form.password == @form.password_confirmation
-        $http({
-          method: 'POST'
-          url: '/register'
-          data: $.param { name: @form.name, email: @form.email, password: @form.password }
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        }).success (rsp, status, headers) -> scope.form = {}; authService.loginConfirmed() if rsp.success
-
-    scope.signup_link = ->
-      angular.element('#login').bPopup().close()
-      $timeout(
-        -> angular.element('#signup').bPopup({ modalClose: false }); angular.element('#signup input[type=text]:first').focus()
-        400
-      )
-    scope.signin_link = ->
-      angular.element('#signup').bPopup().close()
-      $timeout(
-        -> angular.element('#login').bPopup({ modalClose: false }); angular.element('#login input[type=email]').focus()
-        400
-      )
   )
   .config([ '$routeProvider', '$locationProvider', '$httpProvider', 'authServiceProvider', ($routeProvider, $locationProvider, $httpProvider, authServiceProvider) ->
     interceptor = ['$rootScope', '$q', ($rootScope, $q) ->
       success = (rsp) -> rsp
       error = (rsp) ->
-        console.log rsp.headers()
         if rsp.status == 401
-          console.log 'err'
           deferred = $q.defer()
           authServiceProvider.pushToBuffer rsp.config, deferred
           $rootScope.$broadcast 'auth:loginRequired'
@@ -202,3 +88,60 @@ angular.module('nutricount', ['ui'])
 
     $locationProvider.html5Mode true
   ])
+  .run ($http, $timeout, $rootScope, authService) ->
+    $rootScope.form = {}
+
+    $rootScope.$on 'auth:loginConfirmed', (event, user) ->
+      $rootScope.user = user
+
+    $rootScope.$on 'auth:loginRequired', ->
+      $timeout(
+        (-> angular.element('#login').bPopup { modalClose: false }, -> angular.element('#login input[type=email]').focus())
+        , 500
+      )
+
+    $rootScope.login_modal = -> angular.element('.modal#login').bPopup()
+
+    $rootScope.login = ->
+      $http({
+        method: 'POST'
+        url: '/login'
+        data: $.param { email: @form.email, password: @form.password }
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }).success (rsp, status, headers) ->
+        if rsp.user
+          $rootScope.form = {}
+          angular.element('#login').bPopup().close()
+          authService.loginConfirmed rsp.user
+        else
+          angular.element('.modal#login .message').text rsp.message
+
+    $rootScope.signup_modal = -> angular.element('.modal#signup').bPopup()
+
+    $rootScope.signup = ->
+      if @form.password == @form.password_confirmation
+        $http({
+          method: 'POST'
+          url: '/register'
+          data: $.param { name: @form.name, email: @form.email, password: @form.password }
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }).success (rsp, status, headers) ->
+          if rsp.user
+            $rootScope.form = {}
+            angular.element('#signup').bPopup().close()
+            authService.loginConfirmed rsp.user
+          else
+            angular.element('.modal#signup .message').text rsp.message
+
+    $rootScope.signup_link = ->
+      angular.element('#login').bPopup().close()
+      $timeout(
+        -> angular.element('#signup').bPopup({ modalClose: false }); angular.element('#signup input[type=text]:first').focus()
+        400
+      )
+    $rootScope.signin_link = ->
+      angular.element('#signup').bPopup().close()
+      $timeout(
+        -> angular.element('#login').bPopup({ modalClose: false }); angular.element('#login input[type=email]').focus()
+        400
+      )
